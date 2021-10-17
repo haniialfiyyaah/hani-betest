@@ -4,7 +4,8 @@ const { Auth } = require('./model')
 const fs = require('fs/promises')
 const seedDB = async () => {
   const data = JSON.parse((await fs.readFile('auth.json')).toString())
-  await Auth.deleteMany({})
+  const auth = await Auth.find()
+  if (auth?.length > 0) await Auth.deleteMany({})
   data.forEach(async (e) => {
     await Auth.create(e)
   })
