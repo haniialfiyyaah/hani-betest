@@ -2,6 +2,7 @@ const { Auth } = require('./model')
 
 // seeding
 const fs = require('fs/promises')
+const mongoose = require('mongoose')
 const seedDB = async () => {
   const data = JSON.parse((await fs.readFile('auth.json')).toString())
   const auth = await Auth.find()
@@ -12,5 +13,6 @@ const seedDB = async () => {
 }
 
 seedDB().then(() => {
+  mongoose.connection.close()
   console.log('Auth user seed successfully')
 })
