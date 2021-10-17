@@ -1,10 +1,21 @@
 const { comparePassword } = require('./helpers/bcrypt')
 const { generateToken } = require('./helpers/jwt')
+const { redis } = require('./helpers/redis')
 const { User, Auth } = require('./model')
+const REDIS_NAME = process.env.REDIS_NAME
 class UserController {
   static async index(req, res, next) {
     try {
-      let users = await User.find()
+      let users
+      const cacheUsers = await redis.get(REDIS_NAME)
+      if (cacheUsers) {
+        console.log('cache')
+        users = JSON.parse(cacheUsers)
+      } else {
+        console.log('find')
+        users = await User.find()
+        await redis.set(REDIS_NAME, JSON.stringify(users))
+      }
       res.status(200).json({ message: 'users found.', data: users })
     } catch (err) {
       console.log(err)
@@ -22,6 +33,7 @@ class UserController {
         emailAddress,
         identityNumber,
       })
+      await redis.del(REDIS_NAME)
       res.status(200).json({ message: 'user created.', data: newUser })
     } catch (err) {
       console.log(err)
@@ -55,8 +67,8 @@ class UserController {
         emailAddress,
         identityNumber,
       })
-
       if (!user) return res.status(404).json({ message: 'User not found' })
+      await redis.del(REDIS_NAME)
       res.status(200).json({ message: 'user updated' })
     } catch (err) {
       console.log(err)
@@ -70,6 +82,7 @@ class UserController {
       const { id } = req.params
       let user = await User.findByIdAndDelete(id)
       if (!user) return res.status(404).json({ message: 'User not found' })
+      await redis.del(REDIS_NAME)
       res.status(200).json({ message: 'user deleted' })
     } catch (err) {
       console.log(err)
@@ -88,7 +101,7 @@ class AuthController {
       const user = await Auth.findOne({ username })
       if (user && comparePassword(password, user.password)) {
         const token = generateToken({
-          _id: user._id,
+          id: user._id,
           username: user.username,
         })
         res.status(200).json({

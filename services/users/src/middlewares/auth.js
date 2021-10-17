@@ -8,7 +8,7 @@ class AuthMiddleware {
       const token = authorization?.split('Bearer ')[1]
       if (token) {
         let payload = verifyToken(token)
-        const user = await Auth.findById(payload._id)
+        const user = await Auth.findOne({ username: payload.username })
         !user
           ? res.status(404).json({ message: 'Invalid token' })
           : ((req.UserData = payload), next())
