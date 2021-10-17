@@ -10,4 +10,6 @@ const seedDB = async () => {
   })
 }
 
-module.exports = { seedDB }
+seedDB().then(() => {
+  console.log('Auth user seed successfully')
+})
