@@ -88,8 +88,8 @@ class AuthController {
       const user = await Auth.findOne({ username })
       if (user && comparePassword(password, user.password)) {
         const token = generateToken({
+          _id: user._id,
           username: user.username,
-          password: user.password,
         })
         res.status(200).json({
           message: 'Success',
