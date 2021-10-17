@@ -33,7 +33,19 @@ class UserController {
         emailAddress,
         identityNumber,
       })
-      await redis.del(REDIS_NAME)
+      let users = JSON.parse(await redis.get(REDIS_NAME))
+      users.push({
+        userName: newUser.userName,
+        accountNumber: newUser.accountNumber,
+        emailAddress: newUser.emailAddress,
+        identityNumber: newUser.identityNumber,
+        createdAt: newUser.createdAt,
+        updatedAt: newUser.updatedAt,
+        id: newUser.id,
+        __v: newUser.__v,
+      })
+      await redis.set(REDIS_NAME, JSON.stringify(users))
+
       res.status(200).json({ message: 'user created.', data: newUser })
     } catch (err) {
       console.log(err)
@@ -61,15 +73,32 @@ class UserController {
       const { id } = req.params
       const { userName, accountNumber, emailAddress, identityNumber } = req.body
 
-      let user = await User.findByIdAndUpdate(id, {
+      let oldUser = await User.findByIdAndUpdate(id, {
         userName,
         accountNumber,
         emailAddress,
         identityNumber,
       })
-      if (!user) return res.status(404).json({ message: 'User not found' })
-      await redis.del(REDIS_NAME)
-      res.status(200).json({ message: 'user updated' })
+      if (!oldUser) return res.status(404).json({ message: 'User not found' })
+      // return new data
+      let user = await User.findById(id)
+
+      // redis update
+      let users = JSON.parse(await redis.get(REDIS_NAME))
+      users = users.filter((_user) => _user.id !== user.id)
+      users.push({
+        userName: user.userName,
+        accountNumber: user.accountNumber,
+        emailAddress: user.emailAddress,
+        identityNumber: user.identityNumber,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        id: user.id,
+        __v: user.__v,
+      })
+      await redis.set(REDIS_NAME, JSON.stringify(users))
+
+      res.status(200).json({ message: 'user updated', data: user })
     } catch (err) {
       console.log(err)
       let message = err?.message || 'Internal Server Error'
@@ -82,7 +111,12 @@ class UserController {
       const { id } = req.params
       let user = await User.findByIdAndDelete(id)
       if (!user) return res.status(404).json({ message: 'User not found' })
-      await redis.del(REDIS_NAME)
+
+      // redis update
+      let users = JSON.parse(await redis.get(REDIS_NAME))
+      users = users.filter((_user) => _user.id !== user.id)
+      await redis.set(REDIS_NAME, JSON.stringify(users))
+
       res.status(200).json({ message: 'user deleted' })
     } catch (err) {
       console.log(err)
