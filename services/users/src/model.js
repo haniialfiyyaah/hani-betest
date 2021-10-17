@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const { hashPassword } = require('./helpers/bcrypt')
 
 const UserSchema = new mongoose.Schema(
   {
@@ -49,4 +50,25 @@ UserSchema.pre('save', function () {
 
 UserSchema.index({ id: 'text', accountNumber: 'text', identityNumber: 'text' })
 
-module.exports = mongoose.model('User', UserSchema)
+const User = mongoose.model('User', UserSchema)
+
+const AuthSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    unique: true,
+    required: true,
+    index: true,
+  },
+  password: {
+    type: String,
+    required: true,
+    minLength: [6, 'password has to be at least 6 characters'],
+  },
+})
+AuthSchema.pre('save', function () {
+  this.password = hashPassword(this.password)
+})
+
+const Auth = mongoose.model('Auth', AuthSchema)
+
+module.exports = { User, Auth }

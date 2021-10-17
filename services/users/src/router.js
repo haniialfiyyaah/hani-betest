@@ -1,5 +1,7 @@
 const router = require('express').Router()
-const { UserController } = require('./controller')
+const { UserController, AuthController } = require('./controller')
+
+router.get('/token', AuthController.token)
 
 router.get('/', UserController.index)
 router.get('/:id', UserController.show)

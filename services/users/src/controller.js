@@ -1,4 +1,6 @@
-const User = require('./model')
+const { comparePassword } = require('./helpers/bcrypt')
+const { generateToken } = require('./helpers/jwt')
+const { User, Auth } = require('./model')
 class UserController {
   static async index(req, res, next) {
     try {
@@ -77,4 +79,31 @@ class UserController {
   }
 }
 
-module.exports = { UserController }
+class AuthController {
+  static async token(req, res) {
+    try {
+      const { username, password } = req.query
+      if (!username || !password)
+        res.status(400).json({ message: 'Username and password required' })
+      const user = await Auth.findOne({ username })
+      if (user && comparePassword(password, user.password)) {
+        const token = generateToken({
+          username: user.username,
+          password: user.password,
+        })
+        res.status(200).json({
+          message: 'Success',
+          token,
+        })
+      } else {
+        res.status(401).json({ message: 'Unauthorized' })
+      }
+    } catch (err) {
+      console.log(err)
+      let message = err?.message || 'Internal Server Error'
+      res.status(500).json({ message: message, errors: err?.errors })
+    }
+  }
+}
+
+module.exports = { UserController, AuthController }
