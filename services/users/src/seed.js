@@ -13,6 +13,6 @@ const seedDB = async () => {
 }
 
 seedDB().then(() => {
-  mongoose.connection.close()
   console.log('Auth user seed successfully')
+  mongoose.connection.close()
 })
